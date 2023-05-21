@@ -2,6 +2,7 @@ package com.app.contact.service.service.impl;
 
 import com.app.contact.service.entity.Contact;
 import com.app.contact.service.entity.UserInfo;
+import com.app.contact.service.exception.CustomException;
 import com.app.contact.service.model.ContactInfo;
 import com.app.contact.service.model.SearchParameters;
 import com.app.contact.service.repository.ContactRepository;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,26 +30,6 @@ public class ContactServiceImpl implements ContactService {
 
     @Autowired
     private ContactRepository contactRepository;
-
-    @Autowired
-    private UserInfoRepository repository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-//    @PostConstruct
-//    public void createUser(){
-//            Optional<UserInfo> user = repository.findByName("Bhavikaaaa");
-//            if(!user.isPresent()) {
-//                UserInfo build = UserInfo.builder().email("bhavika.th@gmail.com")
-//                        .name("Bhavikaaaa")
-//                        .password(passwordEncoder.encode("pass123"))
-//                        .roles("")
-//                        .build();
-//                repository.save(build);
-//            }
-//    }
-
 
     @Override
         public String saveContact(ContactInfo contactInfo) {
@@ -82,7 +64,7 @@ public class ContactServiceImpl implements ContactService {
     @Override
     public String deleteContact(String code) {
         Contact contact = contactRepository.findByUserCode(code)
-                .orElseThrow(()->new RuntimeException("Contact not found"));
+                .orElseThrow(()->new CustomException("Contact not found"));
 
         contactRepository.delete(contact);
         return "Contact deleted successfully";
@@ -113,6 +95,10 @@ public class ContactServiceImpl implements ContactService {
          List<Contact>  list = contactRepository.findAll(byFirstName(firstName)
                  .or(byLastName(lastName))
                  .or(byEmail(email)));
+
+         if(list == null){
+             throw new CustomException("No Contact present for this search");
+         }
 
          return list.stream().map(contact -> ContactInfo.builder()
                  .phoneNumber(contact.getPhoneNumber())
